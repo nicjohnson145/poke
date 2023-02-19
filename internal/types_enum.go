@@ -14,15 +14,12 @@ import (
 const (
 	// RequestTypeHttp is a RequestType of type http.
 	RequestTypeHttp RequestType = "http"
-	// RequestTypeGrpc is a RequestType of type grpc.
-	RequestTypeGrpc RequestType = "grpc"
 )
 
 var ErrInvalidRequestType = fmt.Errorf("not a valid RequestType, try [%s]", strings.Join(_RequestTypeNames, ", "))
 
 var _RequestTypeNames = []string{
 	string(RequestTypeHttp),
-	string(RequestTypeGrpc),
 }
 
 // RequestTypeNames returns a list of possible string values of RequestType.
@@ -45,7 +42,6 @@ func (x RequestType) IsValid() bool {
 
 var _RequestTypeValue = map[string]RequestType{
 	"http": RequestTypeHttp,
-	"grpc": RequestTypeGrpc,
 }
 
 // ParseRequestType attempts to convert a string to a RequestType.
