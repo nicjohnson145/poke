@@ -1,0 +1,14 @@
+version: '3'
+
+tasks:
+  generate:
+    desc: create generated code
+    cmds:
+    - go generate ./...
+    - task: mocks
+
+  mocks:
+    internal: true
+    dir: internal
+    cmds:
+    - mockery --all --keeptree --disable-version-string --with-expecter
