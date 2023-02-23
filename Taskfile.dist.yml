@@ -11,4 +11,4 @@ tasks:
     internal: true
     dir: internal
     cmds:
-    - mockery --all --keeptree --disable-version-string --with-expecter
+    - mockery --all --inpackage --disable-version-string --with-expecter

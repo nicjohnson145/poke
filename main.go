@@ -7,12 +7,6 @@ import (
 	"github.com/nicjohnson145/poke/cmd"
 )
 
-// Version info set by goreleaser
-var (
-	version = "development"
-	date    = "unknown"
-)
-
 func main() {
 	if err := cmd.Root().Execute(); err != nil {
 		fmt.Println(err.Error())

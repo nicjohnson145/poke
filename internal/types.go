@@ -10,6 +10,7 @@ http
 type RequestType string
 
 type Call struct {
+	Name        string            `yaml:"name,omitempty"`
 	Type        RequestType       `yaml:"type,omitempty"`
 	Body        map[string]any    `yaml:"body,omitempty"`
 	Headers     map[string]string `yaml:"headers,omitempty"`

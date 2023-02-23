@@ -14,9 +14,10 @@ import (
 
 var ErrWalkError = errors.New("error walking directory")
 
+type SequenceMap map[string]Sequence
+
 type Parser interface {
-	ParseSequences(root string) (map[string]Sequence, error)
-	ParseSingleSequence(path string) (Sequence, error)
+	Parse(path string) (SequenceMap, error)
 }
 
 type FSParserOpts struct {
@@ -35,8 +36,8 @@ type FSParser struct {
 	log zerolog.Logger
 }
 
-func (f *FSParser) ParseSequences(root string) (map[string]Sequence, error) {
-	sequences := map[string]Sequence{}
+func (f *FSParser) ParseSequences(root string) (SequenceMap, error) {
+	sequences := SequenceMap{}
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -79,4 +80,26 @@ func (f *FSParser) ParseSingleSequence(path string) (Sequence, error) {
 	}
 
 	return seq, nil
+}
+
+func (f *FSParser) Parse(path string) (SequenceMap, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("error checking path: %w", err)
+	}
+
+	var sequences SequenceMap
+	if info.IsDir() {
+		sequences, err = f.ParseSequences(path)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing directory: %w", err)
+		}
+	} else {
+		seq, err := f.ParseSingleSequence(path)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing file: %w", err)
+		}
+		sequences = SequenceMap{path: seq}
+	}
+	return sequences, nil
 }
