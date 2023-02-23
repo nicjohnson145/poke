@@ -8,11 +8,9 @@ import (
 
 func TestFSParser(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
-		parser := NewFSParser(FSParserOpts{
-			Root: "./testdata/parser/happy",
-		})
+		parser := NewFSParser(FSParserOpts{})
 
-		got, err := parser.ParseSequences()
+		got, err := parser.ParseSequences("./testdata/parser/happy")
 		require.NoError(t, err)
 
 		require.Equal(

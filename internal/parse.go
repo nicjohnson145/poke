@@ -8,33 +8,37 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )
 
 var ErrWalkError = errors.New("error walking directory")
 
 type Parser interface {
-	ParseSequences() (map[string]Sequence, error)
+	ParseSequences(root string) (map[string]Sequence, error)
+	ParseSingleSequence(path string) (Sequence, error)
 }
 
 type FSParserOpts struct {
-	Root string
+	Logger zerolog.Logger
 }
 
 func NewFSParser(opts FSParserOpts) *FSParser {
 	return &FSParser{
-		root: opts.Root,
+		log: opts.Logger,
 	}
 }
 
+var _ Parser = (*FSParser)(nil)
+
 type FSParser struct {
-	root string
+	log zerolog.Logger
 }
 
-func (f *FSParser) ParseSequences() (map[string]Sequence, error) {
+func (f *FSParser) ParseSequences(root string) (map[string]Sequence, error) {
 	sequences := map[string]Sequence{}
 
-	err := filepath.WalkDir(f.root, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -44,17 +48,11 @@ func (f *FSParser) ParseSequences() (map[string]Sequence, error) {
 		}
 
 		if strings.HasSuffix(d.Name(), ".yaml") || strings.HasSuffix(d.Name(), ".yml") {
-			content, err := os.ReadFile(path)
+			seq, err := f.ParseSingleSequence(path)
 			if err != nil {
-				return fmt.Errorf("error reading file: %w", err)
+				return fmt.Errorf("error parsing sequence: %w", err)
 			}
-			var seq Sequence
-			err = yaml.Unmarshal(content, &seq)
-			if err != nil {
-				return fmt.Errorf("error unmarshalling: %w", err)
-			}
-
-			relPath, err := filepath.Rel(f.root, path)
+			relPath, err := filepath.Rel(root, path)
 			if err != nil {
 				return fmt.Errorf("error computing relative path: %w", err)
 			}
@@ -67,4 +65,18 @@ func (f *FSParser) ParseSequences() (map[string]Sequence, error) {
 		return nil, fmt.Errorf("%w: %w", ErrWalkError, err)
 	}
 	return sequences, nil
+}
+
+func (f *FSParser) ParseSingleSequence(path string) (Sequence, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return Sequence{}, fmt.Errorf("error reading file: %w", err)
+	}
+	var seq Sequence
+	err = yaml.Unmarshal(content, &seq)
+	if err != nil {
+		return Sequence{}, fmt.Errorf("error unmarshalling: %w", err)
+	}
+
+	return seq, nil
 }

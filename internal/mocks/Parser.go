@@ -20,25 +20,25 @@ func (_m *Parser) EXPECT() *Parser_Expecter {
 	return &Parser_Expecter{mock: &_m.Mock}
 }
 
-// ParseSequences provides a mock function with given fields:
-func (_m *Parser) ParseSequences() (map[string]internal.Sequence, error) {
-	ret := _m.Called()
+// ParseSequences provides a mock function with given fields: root
+func (_m *Parser) ParseSequences(root string) (map[string]internal.Sequence, error) {
+	ret := _m.Called(root)
 
 	var r0 map[string]internal.Sequence
 	var r1 error
-	if rf, ok := ret.Get(0).(func() (map[string]internal.Sequence, error)); ok {
-		return rf()
+	if rf, ok := ret.Get(0).(func(string) (map[string]internal.Sequence, error)); ok {
+		return rf(root)
 	}
-	if rf, ok := ret.Get(0).(func() map[string]internal.Sequence); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(string) map[string]internal.Sequence); ok {
+		r0 = rf(root)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]internal.Sequence)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(root)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -52,13 +52,14 @@ type Parser_ParseSequences_Call struct {
 }
 
 // ParseSequences is a helper method to define mock.On call
-func (_e *Parser_Expecter) ParseSequences() *Parser_ParseSequences_Call {
-	return &Parser_ParseSequences_Call{Call: _e.mock.On("ParseSequences")}
+//   - root string
+func (_e *Parser_Expecter) ParseSequences(root interface{}) *Parser_ParseSequences_Call {
+	return &Parser_ParseSequences_Call{Call: _e.mock.On("ParseSequences", root)}
 }
 
-func (_c *Parser_ParseSequences_Call) Run(run func()) *Parser_ParseSequences_Call {
+func (_c *Parser_ParseSequences_Call) Run(run func(root string)) *Parser_ParseSequences_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(string))
 	})
 	return _c
 }
@@ -68,7 +69,7 @@ func (_c *Parser_ParseSequences_Call) Return(_a0 map[string]internal.Sequence, _
 	return _c
 }
 
-func (_c *Parser_ParseSequences_Call) RunAndReturn(run func() (map[string]internal.Sequence, error)) *Parser_ParseSequences_Call {
+func (_c *Parser_ParseSequences_Call) RunAndReturn(run func(string) (map[string]internal.Sequence, error)) *Parser_ParseSequences_Call {
 	_c.Call.Return(run)
 	return _c
 }
