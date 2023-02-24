@@ -14,3 +14,7 @@ calls:
 - name: product
   type: http
   url: https://dummyjson.com/products/1
+- name: expected404
+  type: http
+  url: https://dummyjson.com/http/404/expected_404
+  want-status: 404
