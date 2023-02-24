@@ -1,0 +1,19 @@
+calls:
+- name: fetch
+  type: grpc
+  service-host: echoserver:50051
+  url: functionaltest.EchoService/Echo
+  body:
+    message: foo
+  exports:
+  - jq: '.message'
+    as: 'msg'
+- name: repush
+  type: grpc
+  service-host: echoserver:50051
+  url: functionaltest.EchoService/Echo
+  body:
+    message: '{{ .msg }}'
+  asserts:
+  - jq: '.message'
+    expected: 'foo'
