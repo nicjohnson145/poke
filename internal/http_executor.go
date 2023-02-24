@@ -58,7 +58,10 @@ func (h *HTTPExecutor) Execute(call Call) (*ExecuteResult, error) {
 	var outBody map[string]any
 	err = json.NewDecoder(resp.Body).Decode(&outBody)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding body as JSON: %w", err)
+		if err != io.EOF {
+			return nil, fmt.Errorf("error decoding body as JSON: %w", err)
+		}
+		// No body, move along
 	}
 
 	return &ExecuteResult{
