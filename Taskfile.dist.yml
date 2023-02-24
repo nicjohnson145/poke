@@ -12,3 +12,10 @@ tasks:
     dir: internal
     cmds:
     - mockery --all --inpackage --disable-version-string --with-expecter
+
+  smokes:
+    desc: run smoke tests against dummyjson.com
+    cmds:
+    - go build
+    - defer: rm poke
+    - ./poke --debug hack/dummyjson_seq.yaml
