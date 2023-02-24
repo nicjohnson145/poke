@@ -1,11 +1,16 @@
 package internal
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"text/template"
+
+	"github.com/itchyny/gojq"
 	"github.com/rs/zerolog"
+	"gopkg.in/yaml.v3"
 )
 
 type RunnerOpts struct {
@@ -19,6 +24,7 @@ func NewRunner(opts RunnerOpts) *Runner {
 		log:          opts.Logger,
 		httpExecutor: opts.HttpExecutor,
 		parser:       opts.Parser,
+		ctxVariables: make(map[string]string),
 	}
 }
 
@@ -26,6 +32,7 @@ type Runner struct {
 	log          zerolog.Logger
 	httpExecutor Executor
 	parser       Parser
+	ctxVariables map[string]string
 }
 
 func (r *Runner) Run(path string) error {
@@ -52,7 +59,12 @@ func (r *Runner) runSequences(seqs map[string]Sequence) error {
 }
 
 func (r *Runner) runSingleSequence(seq Sequence) error {
-	for idx, call := range seq.Calls {
+	for idx, c := range seq.Calls {
+		call, err := r.evaluateTemplate(c)
+		if err != nil {
+			return err
+		}
+
 		exec, err := r.getClient(call.Type)
 		if err != nil {
 			return fmt.Errorf("error creating request client: %w", err)
@@ -76,6 +88,14 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 			r.log.Error().Interface("body", result.Body).Msg("body")
 			return fmt.Errorf("got incorrect status: want (%v) got (%v)", wantStatus, result.StatusCode)
 		}
+
+		for _, exp := range call.Export {
+			value, err := r.executeJQ(result.Body, exp.JQ)
+			if err != nil {
+				return err
+			}
+			r.ctxVariables[exp.As] = value
+		}
 	}
 
 	return nil
@@ -86,7 +106,68 @@ func (r *Runner) getClient(typ RequestType) (Executor, error) {
 	switch typ {
 	case RequestTypeHttp:
 		return r.httpExecutor, nil
+	case "":
+		return r.httpExecutor, nil
 	default:
 		return nil, fmt.Errorf("unhandled client type of '%v'", typ)
 	}
+}
+
+func (r *Runner) evaluateTemplate(call Call) (Call, error) {
+	callBytes, err := yaml.Marshal(call)
+	if err != nil {
+		r.log.Err(err).Msg("error marshalling call")
+		return Call{}, err
+	}
+
+	t, err := template.New("").Parse(string(callBytes))
+	if err != nil {
+		r.log.Err(err).Msg("error parsing call as template")
+		return Call{}, err
+	}
+
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, r.ctxVariables); err != nil {
+		r.log.Err(err).Msg("error performing substitutions")
+		return Call{}, err
+	}
+
+	var newCall Call
+	if err := yaml.Unmarshal(buf.Bytes(), &newCall); err != nil {
+		r.log.Err(err).Msg("marshalling back to yaml")
+		return Call{}, err
+	}
+
+	return newCall, nil
+}
+
+func (r *Runner) executeJQ(body any, jq string) (string, error) {
+	query, err := gojq.Parse(jq)
+	if err != nil {
+		r.log.Err(err).Str("jq", jq).Msg("error parsing jq query")
+		return "", err
+	}
+
+	var strVal string
+	iterCount := 0
+	iter := query.Run(body)
+	for {
+		val, ok := iter.Next()
+		if !ok {
+			break
+		}
+		iterCount += 1
+		if iterCount > 1 {
+			return "", fmt.Errorf("jq resulted in more than 1 value")
+		}
+
+		if err, ok := val.(error); ok {
+			r.log.Err(err).Msg("error executing JQ")
+			return "", err
+		}
+
+		strVal = val.(string)
+	}
+
+	return strVal, nil
 }

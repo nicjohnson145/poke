@@ -52,11 +52,68 @@ func TestRun(t *testing.T) {
 			nil,
 		)
 
+		ok := &ExecuteResult{StatusCode: 200}
 		mockEx := NewMockExecutor(t)
-		mockEx.EXPECT().Execute(call1).Return(nil, nil)
-		mockEx.EXPECT().Execute(call2).Return(nil, nil)
-		mockEx.EXPECT().Execute(call3).Return(nil, nil)
-		mockEx.EXPECT().Execute(call4).Return(nil, nil)
+		mockEx.EXPECT().Execute(call1).Return(ok, nil)
+		mockEx.EXPECT().Execute(call2).Return(ok, nil)
+		mockEx.EXPECT().Execute(call3).Return(ok, nil)
+		mockEx.EXPECT().Execute(call4).Return(ok, nil)
+
+		runner := NewRunner(RunnerOpts{
+			HttpExecutor: mockEx,
+			Parser: mockParser,
+		})
+
+		err := runner.Run("./some/path")
+		require.NoError(t, err)
+	})
+}
+
+func TestVariablePassing(t *testing.T) {
+	t.Run("happy jq body", func(t *testing.T) {
+		call1 := Call{
+			Name: "fetch",
+			Url: "http://some.api.com/get",
+			Export: []Export{
+				{
+					JQ: ".data.name",
+					As: "fooVar",
+				},
+			},
+		}
+
+		call2 := Call{
+			Name: "use",
+			Url: "http://some.api.com/use",
+			Body: map[string]any{
+				"name": "{{ .fooVar }}",
+			},
+		}
+		transformCall2 := Call{
+			Name: "use",
+			Url: "http://some.api.com/use",
+			Body: map[string]any{
+				"name": "fooNameActual",
+			},
+		}
+		seqA := Sequence{Calls: []Call{call1, call2}}
+
+		mockParser := NewMockParser(t)
+		mockParser.EXPECT().Parse("./some/path").Return(SequenceMap{"seqA.yaml": seqA}, nil)
+
+		mockEx := NewMockExecutor(t)
+		mockEx.EXPECT().Execute(call1).Return(
+			&ExecuteResult{
+				StatusCode: 200,
+				Body: map[string]any{
+					"data": map[string]any{
+						"name": "fooNameActual",
+					},
+				},
+			},
+			nil,
+		)
+		mockEx.EXPECT().Execute(transformCall2).Return(&ExecuteResult{StatusCode: 200}, nil)
 
 		runner := NewRunner(RunnerOpts{
 			HttpExecutor: mockEx,

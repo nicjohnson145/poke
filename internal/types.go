@@ -18,8 +18,14 @@ type Call struct {
 	Url         string            `yaml:"url,omitempty"`
 	Method      string            `yaml:"method,omitempty"`
 	WantStatus  int               `yaml:"want-status,omitempty"`
+	Export      []Export          `yaml:"exports,omitempty"`
 }
 
 type Sequence struct {
 	Calls []Call `yaml:"calls"`
+}
+
+type Export struct {
+	JQ string `yaml:"jq,omitempty"`
+	As string `yaml:"as,omitempty"`
 }
