@@ -11,6 +11,7 @@ import (
 	"github.com/itchyny/gojq"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
+	"github.com/google/go-cmp/cmp"
 )
 
 type RunnerOpts struct {
@@ -89,12 +90,24 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 			return fmt.Errorf("got incorrect status: want (%v) got (%v)", wantStatus, result.StatusCode)
 		}
 
-		for _, exp := range call.Export {
-			value, err := r.executeJQ(result.Body, exp.JQ)
+		for _, exp := range call.Exports {
+			value, err := r.executeJQString(result.Body, exp.JQ)
 			if err != nil {
 				return err
 			}
 			r.ctxVariables[exp.As] = value
+		}
+
+		for _, ass := range call.Asserts {
+			value, err := r.executeJQ(result.Body, ass.JQ)
+			if err != nil {
+				return err
+			}
+			if diff := cmp.Diff(ass.Expected, value); diff != "" {
+				r.log.Error().Msg("failed assertion")
+				fmt.Println(diff)
+				return fmt.Errorf("failed assert")
+			}
 		}
 	}
 
@@ -141,14 +154,14 @@ func (r *Runner) evaluateTemplate(call Call) (Call, error) {
 	return newCall, nil
 }
 
-func (r *Runner) executeJQ(body any, jq string) (string, error) {
+func (r *Runner) executeJQ(body any, jq string) (any, error) {
 	query, err := gojq.Parse(jq)
 	if err != nil {
 		r.log.Err(err).Str("jq", jq).Msg("error parsing jq query")
 		return "", err
 	}
 
-	var strVal string
+	var outVal any
 	iterCount := 0
 	iter := query.Run(body)
 	for {
@@ -166,8 +179,16 @@ func (r *Runner) executeJQ(body any, jq string) (string, error) {
 			return "", err
 		}
 
-		strVal = val.(string)
+		outVal = val
 	}
 
-	return strVal, nil
+	return outVal, nil
+}
+
+func (r *Runner) executeJQString(body any, jq string) (string, error) {
+	val, err := r.executeJQ(body, jq)
+	if err != nil {
+		return "", err
+	}
+	return val.(string), err
 }

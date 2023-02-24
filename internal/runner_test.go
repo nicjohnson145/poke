@@ -74,7 +74,7 @@ func TestVariablePassing(t *testing.T) {
 		call1 := Call{
 			Name: "fetch",
 			Url: "http://some.api.com/get",
-			Export: []Export{
+			Exports: []Export{
 				{
 					JQ: ".data.name",
 					As: "fooVar",
@@ -114,6 +114,49 @@ func TestVariablePassing(t *testing.T) {
 			nil,
 		)
 		mockEx.EXPECT().Execute(transformCall2).Return(&ExecuteResult{StatusCode: 200}, nil)
+
+		runner := NewRunner(RunnerOpts{
+			HttpExecutor: mockEx,
+			Parser: mockParser,
+		})
+
+		err := runner.Run("./some/path")
+		require.NoError(t, err)
+	})
+}
+
+func TestAssertions(t *testing.T) {
+	t.Run("", func(t *testing.T) {
+		call1 := Call{
+			Name: "foo",
+			Url: "http://some.api.com",
+			Asserts: []Assert{
+				{
+					JQ: ".data",
+					Expected: map[string]any{
+						"foo": "bar",
+					},
+				},
+			},
+		}
+		mockParser := NewMockParser(t)
+		mockParser.EXPECT().Parse("./some/path").Return(
+			SequenceMap{"seqA.yaml": Sequence{Calls: []Call{call1}}},
+			nil,
+		)
+
+		mockEx := NewMockExecutor(t)
+		mockEx.EXPECT().Execute(call1).Return(
+			&ExecuteResult{
+				StatusCode: 200,
+				Body: map[string]any{
+					"data": map[string]any{
+						"foo": "bar",
+					},
+				},
+			},
+			nil,
+		)
 
 		runner := NewRunner(RunnerOpts{
 			HttpExecutor: mockEx,

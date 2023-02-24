@@ -18,7 +18,8 @@ type Call struct {
 	Url         string            `yaml:"url,omitempty"`
 	Method      string            `yaml:"method,omitempty"`
 	WantStatus  int               `yaml:"want-status,omitempty"`
-	Export      []Export          `yaml:"exports,omitempty"`
+	Exports     []Export          `yaml:"exports,omitempty"`
+	Asserts     []Assert          `yaml:"asserts,omitempty"`
 }
 
 type Sequence struct {
@@ -28,4 +29,9 @@ type Sequence struct {
 type Export struct {
 	JQ string `yaml:"jq,omitempty"`
 	As string `yaml:"as,omitempty"`
+}
+
+type Assert struct {
+	JQ       string `yaml:"jq,omitempty"`
+	Expected any    `yaml:"expected,omitempty"`
 }

@@ -3,6 +3,7 @@ module github.com/nicjohnson145/poke
 go 1.20
 
 require (
+	github.com/google/go-cmp v0.5.9
 	github.com/itchyny/gojq v0.12.11
 	github.com/rs/zerolog v1.29.0
 	github.com/spf13/cobra v1.6.1
