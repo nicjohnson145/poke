@@ -39,5 +39,9 @@ func Root() *cobra.Command {
 	}
 	rootCmd.PersistentFlags().BoolP(config.Debug, "d", false, "Enable debug logging")
 
+	rootCmd.AddCommand(
+		versionCmd(),
+	)
+
 	return rootCmd
 }
