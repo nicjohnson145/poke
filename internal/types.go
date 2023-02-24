@@ -17,6 +17,7 @@ type Call struct {
 	ServiceHost string            `yaml:"service-host,omitempty"`
 	Url         string            `yaml:"url,omitempty"`
 	Method      string            `yaml:"method,omitempty"`
+	WantStatus  int               `yaml:"want-status,omitempty"`
 }
 
 type Sequence struct {

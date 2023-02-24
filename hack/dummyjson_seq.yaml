@@ -1,0 +1,16 @@
+calls:
+- name: smokes
+  type: http
+  url: https://dummyjson.com/test
+- name: auth
+  type: http
+  url: https://dummyjson.com/auth/login
+  method: POST
+  headers:
+    Content-Type: application/json
+  body:
+    username: umcgourty9
+    password: i0xzpX
+- name: product
+  type: http
+  url: https://dummyjson.com/products/1

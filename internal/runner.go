@@ -1,8 +1,9 @@
 package internal
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
+	"net/http"
 
 	"github.com/rs/zerolog"
 )
@@ -57,12 +58,23 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 			return fmt.Errorf("error creating request client: %w", err)
 		}
 
-		if _, err := exec.Execute(call); err != nil {
+		result, err := exec.Execute(call)
+		if err != nil {
 			name := call.Name
 			if name == "" {
 				name = fmt.Sprintf("call_%v", idx)
 			}
 			return fmt.Errorf("error executing call %v: %w", name, err)
+		}
+
+		wantStatus := call.WantStatus
+		if wantStatus == 0 {
+			wantStatus = http.StatusOK
+		}
+
+		if result.StatusCode != wantStatus {
+			r.log.Error().Interface("body", result.Body).Msg("body")
+			return fmt.Errorf("got incorrect status: want (%v) got (%v)", wantStatus, result.StatusCode)
 		}
 	}
 

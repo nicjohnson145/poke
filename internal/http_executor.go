@@ -38,15 +38,27 @@ func (h *HTTPExecutor) Execute(call Call) (*ExecuteResult, error) {
 	var inBody io.Reader
 	if call.Body != nil {
 		bodyBytes, err := json.Marshal(call.Body)
+		h.log.Debug().Bytes("bodyBytes", bodyBytes).Msg("adding message body")
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling body as JSON: %w", err)
 		}
 		inBody = strings.NewReader(string(bodyBytes))
 	}
 
-	req, err := http.NewRequest(call.Method, call.Url, inBody)
+	method := call.Method
+	if method == "" {
+		method = http.MethodGet
+	}
+	h.log.Debug().Str("method", method).Str("url", call.Url).Msg("executing call")
+	req, err := http.NewRequest(method, call.Url, inBody)
 	if err != nil {
 		return nil, fmt.Errorf("error building request: %w", err)
+	}
+
+	if call.Headers != nil {
+		for k, v := range call.Headers {
+			req.Header.Set(k, v)
+		}
 	}
 
 	resp, err := h.client.Do(req)
