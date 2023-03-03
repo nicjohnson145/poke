@@ -1,7 +1,7 @@
 calls:
 - name: fetch
   type: grpc
-  service-host: echoserver:50051
+  service-host: localhost:50051
   url: functionaltest.EchoService/Echo
   body:
     message: foo
@@ -10,7 +10,7 @@ calls:
     as: 'msg'
 - name: repush
   type: grpc
-  service-host: echoserver:50051
+  service-host: localhost:50051
   url: functionaltest.EchoService/Echo
   body:
     message: '{{ .msg }}'

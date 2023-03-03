@@ -8,10 +8,11 @@ import (
 
 	"text/template"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/itchyny/gojq"
+	"github.com/nicjohnson145/poke/config"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
-	"github.com/google/go-cmp/cmp"
 )
 
 type RunnerOpts struct {
@@ -81,7 +82,7 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 		}
 
 		wantStatus := call.WantStatus
-		if wantStatus == 0 {
+		if wantStatus == 0 && call.Type == RequestTypeHttp {
 			wantStatus = http.StatusOK
 		}
 
@@ -121,6 +122,10 @@ func (r *Runner) getClient(typ RequestType) (Executor, error) {
 		return r.httpExecutor, nil
 	case "":
 		return r.httpExecutor, nil
+	case RequestTypeGrpc:
+		return NewGRPCExecutor(GRPCExecutorOpts{
+			Logger: config.WithComponent(r.log, "grpc"),
+		}), nil
 	default:
 		return nil, fmt.Errorf("unhandled client type of '%v'", typ)
 	}

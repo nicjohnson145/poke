@@ -5,6 +5,7 @@ package internal
 /*
 ENUM(
 http
+grpc
 )
 */
 type RequestType string
