@@ -44,14 +44,12 @@ func (g *GRPCExecutor) fetchDescriptors(service string, host string) (grpcurl.De
 		return ds, nil
 	}
 
-	g.log.Debug().Msg("fetching descriptors using reflection")
-	// TODO: header support
-	ctx := metadata.NewOutgoingContext(context.Background(), grpcurl.MetadataFromHeaders([]string{}))
-	conn, err := grpcurl.BlockingDial(ctx, "tcp", host, nil)
+	conn, err := g.connection(host)
 	if err != nil {
-		g.log.Err(err).Msg("error dialing service")
 		return nil, err
 	}
+	g.log.Debug().Msg("fetching descriptors using reflection")
+	ctx := context.Background()
 	client := grpcreflect.NewClientV1Alpha(ctx, reflectpb.NewServerReflectionClient(conn))
 	source := grpcurl.DescriptorSourceFromServer(ctx, client)
 
@@ -63,8 +61,24 @@ func (g *GRPCExecutor) callToServiceName(call Call) string {
 	return strings.Split(call.Url, "/")[0]
 }
 
-func (g *GRPCExecutor) callToMethodName(call Call) string {
-	return strings.Split(call.Url, "/")[1]
+func (g *GRPCExecutor) connection(host string) (*grpc.ClientConn, error) {
+	conn, ok := g.connections[host]
+	if ok {
+		g.log.Debug().Str("host", host).Msg("reusing existing connection")
+		return conn, nil
+	}
+
+	g.log.Debug().Str("host", host).Msg("acquiring connection")
+	// TODO: header support
+	ctx := metadata.NewOutgoingContext(context.Background(), grpcurl.MetadataFromHeaders([]string{}))
+	conn, err := grpcurl.BlockingDial(ctx, "tcp", host, nil)
+	if err != nil {
+		g.log.Err(err).Msg("error dialing service")
+		return nil, err
+	}
+
+	g.connections[host] = conn
+	return conn, nil
 }
 
 func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error) {
@@ -110,7 +124,7 @@ func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error)
 	}
 
 	ctx := context.Background()
-	conn, err := grpcurl.BlockingDial(ctx, "tcp", call.ServiceHost, nil)
+	conn, err := g.connection(call.ServiceHost)
 	if err != nil {
 		g.log.Err(err).Msg("error dialing service")
 		return nil, 0, err

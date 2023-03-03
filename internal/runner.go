@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/itchyny/gojq"
-	"github.com/nicjohnson145/poke/config"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )
@@ -18,6 +17,7 @@ import (
 type RunnerOpts struct {
 	Logger       zerolog.Logger
 	HttpExecutor Executor
+	GrpcExecutor Executor
 	Parser       Parser
 }
 
@@ -25,6 +25,7 @@ func NewRunner(opts RunnerOpts) *Runner {
 	return &Runner{
 		log:          opts.Logger,
 		httpExecutor: opts.HttpExecutor,
+		grpcExecutor: opts.GrpcExecutor,
 		parser:       opts.Parser,
 		ctxVariables: make(map[string]string),
 	}
@@ -33,6 +34,7 @@ func NewRunner(opts RunnerOpts) *Runner {
 type Runner struct {
 	log          zerolog.Logger
 	httpExecutor Executor
+	grpcExecutor Executor
 	parser       Parser
 	ctxVariables map[string]string
 }
@@ -123,9 +125,7 @@ func (r *Runner) getClient(typ RequestType) (Executor, error) {
 	case "":
 		return r.httpExecutor, nil
 	case RequestTypeGrpc:
-		return NewGRPCExecutor(GRPCExecutorOpts{
-			Logger: config.WithComponent(r.log, "grpc"),
-		}), nil
+		return r.grpcExecutor, nil
 	default:
 		return nil, fmt.Errorf("unhandled client type of '%v'", typ)
 	}

@@ -30,6 +30,9 @@ func Root() *cobra.Command {
 						Timeout: 10 * time.Second,
 					},
 				}),
+				GrpcExecutor: internal.NewGRPCExecutor(internal.GRPCExecutorOpts{
+					Logger: config.WithComponent(logger, "grpcexecutor"),
+				}),
 				Parser: internal.NewFSParser(internal.FSParserOpts{
 					Logger: config.WithComponent(logger, "fsparser"),
 				}),
