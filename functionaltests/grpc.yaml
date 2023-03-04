@@ -1,8 +1,12 @@
+vars:
+  service_host: localhost:50051
+  service: functionaltest.EchoService
+
 calls:
 - name: fetch
   type: grpc
-  service-host: localhost:50051
-  url: functionaltest.EchoService/Echo
+  service-host: '{{ .service_host }}'
+  url: '{{ .service }}/Echo'
   body:
     message: foo
   exports:
@@ -10,8 +14,8 @@ calls:
     as: 'msg'
 - name: repush
   type: grpc
-  service-host: localhost:50051
-  url: functionaltest.EchoService/Echo
+  service-host: '{{ .service_host }}'
+  url: '{{ .service }}/Echo'
   body:
     message: '{{ .msg }}'
   asserts:
@@ -19,8 +23,8 @@ calls:
     expected: 'foo'
 - name: expectedErr
   type: grpc
-  service-host: localhost:50051
-  url: functionaltest.EchoService/Err
+  service-host: '{{ .service_host }}'
+  url: '{{ .service }}/Err'
   body:
     code: 5
   want-status: 5

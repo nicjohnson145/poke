@@ -24,7 +24,8 @@ type Call struct {
 }
 
 type Sequence struct {
-	Calls []Call `yaml:"calls"`
+	Vars  map[string]any `yaml:"vars"`
+	Calls []Call         `yaml:"calls"`
 }
 
 type Export struct {

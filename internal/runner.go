@@ -27,7 +27,7 @@ func NewRunner(opts RunnerOpts) *Runner {
 		httpExecutor: opts.HttpExecutor,
 		grpcExecutor: opts.GrpcExecutor,
 		parser:       opts.Parser,
-		ctxVariables: make(map[string]string),
+		ctxVariables: make(map[string]any),
 	}
 }
 
@@ -36,7 +36,7 @@ type Runner struct {
 	httpExecutor Executor
 	grpcExecutor Executor
 	parser       Parser
-	ctxVariables map[string]string
+	ctxVariables map[string]any
 }
 
 func (r *Runner) Run(path string) error {
@@ -57,12 +57,20 @@ func (r *Runner) runSequences(seqs map[string]Sequence) error {
 			r.log.Err(err).Msg("encountered error during execution")
 			errs = append(errs, fmt.Errorf("error during sequence %v: %w", name, err))
 		}
+		// Reset variables at the end of a sequence so we don't bleed over
+		r.ctxVariables = map[string]any{}
 	}
 
 	return errors.Join(errs...)
 }
 
 func (r *Runner) runSingleSequence(seq Sequence) error {
+	// Set any predefined global vars
+	if seq.Vars != nil {
+		for k, v := range seq.Vars {
+			r.ctxVariables[k] = v
+		}
+	}
 	for idx, c := range seq.Calls {
 		call, err := r.evaluateTemplate(c)
 		if err != nil {
