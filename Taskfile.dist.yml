@@ -25,3 +25,29 @@ tasks:
     dir: functionaltests/echoserver
     cmds:
     - protoc -I./protos/ --go_out=protobuf/ --go_opt=paths=source_relative --go-grpc_out=protobuf/ --go-grpc_opt=paths=source_relative protos/*.proto
+
+  compose:
+    desc: start functional test resources
+    dir: functionaltests
+    cmds:
+    - docker-compose up -d --wait
+
+  functional-test:
+    desc: execute functional tests using docker-compose
+    env:
+      MSG_BODY: foo
+    cmds:
+    - task: compose
+    - go build
+    - ./poke ./functionaltests/grpc.yaml
+
+  unit-tests:
+    desc: execute unit tests
+    cmds:
+    - gotestsum
+
+  test:
+    desc: execute tests
+    cmds:
+    - task: unit-tests
+    - task: functional-test

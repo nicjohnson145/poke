@@ -1,6 +1,7 @@
 vars:
   service_host: localhost:50051
   service: functionaltest.EchoService
+  msg_body: "env MSG_BODY"
 
 calls:
 - name: fetch

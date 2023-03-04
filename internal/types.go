@@ -23,6 +23,13 @@ type Call struct {
 	Asserts     []Assert          `yaml:"asserts,omitempty"`
 }
 
+func (c *Call) GetType() RequestType {
+	if c.Type == "" {
+		return RequestTypeHttp
+	}
+	return c.Type
+}
+
 type Sequence struct {
 	Vars  map[string]any `yaml:"vars"`
 	Calls []Call         `yaml:"calls"`

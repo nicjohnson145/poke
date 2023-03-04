@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  echoserver:
+    build:
+      context: echoserver
+    ports:
+    - 50051:50051

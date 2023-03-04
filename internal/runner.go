@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 
 	"text/template"
 
@@ -92,7 +93,7 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 		}
 
 		wantStatus := call.WantStatus
-		if wantStatus == 0 && call.Type == RequestTypeHttp {
+		if wantStatus == 0 && call.GetType() == RequestTypeHttp {
 			wantStatus = http.StatusOK
 		}
 
@@ -139,6 +140,16 @@ func (r *Runner) getClient(typ RequestType) (Executor, error) {
 	}
 }
 
+var tmplFuncs = template.FuncMap{
+	"env": func(key string) (string, error) {
+		val, ok := os.LookupEnv(key)
+		if !ok {
+			return "", fmt.Errorf("env var %v not set", key)
+		}
+		return val, nil
+	},
+}
+
 func (r *Runner) evaluateTemplate(call Call) (Call, error) {
 	callBytes, err := yaml.Marshal(call)
 	if err != nil {
@@ -146,7 +157,7 @@ func (r *Runner) evaluateTemplate(call Call) (Call, error) {
 		return Call{}, err
 	}
 
-	t, err := template.New("").Parse(string(callBytes))
+	t, err := template.New("").Funcs(tmplFuncs).Parse(string(callBytes))
 	if err != nil {
 		r.log.Err(err).Msg("error parsing call as template")
 		return Call{}, err
