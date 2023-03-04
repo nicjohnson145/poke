@@ -8,15 +8,16 @@ import (
 
 	"text/template"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/itchyny/gojq"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
-	"github.com/google/go-cmp/cmp"
 )
 
 type RunnerOpts struct {
 	Logger       zerolog.Logger
 	HttpExecutor Executor
+	GrpcExecutor Executor
 	Parser       Parser
 }
 
@@ -24,6 +25,7 @@ func NewRunner(opts RunnerOpts) *Runner {
 	return &Runner{
 		log:          opts.Logger,
 		httpExecutor: opts.HttpExecutor,
+		grpcExecutor: opts.GrpcExecutor,
 		parser:       opts.Parser,
 		ctxVariables: make(map[string]string),
 	}
@@ -32,6 +34,7 @@ func NewRunner(opts RunnerOpts) *Runner {
 type Runner struct {
 	log          zerolog.Logger
 	httpExecutor Executor
+	grpcExecutor Executor
 	parser       Parser
 	ctxVariables map[string]string
 }
@@ -81,7 +84,7 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 		}
 
 		wantStatus := call.WantStatus
-		if wantStatus == 0 {
+		if wantStatus == 0 && call.Type == RequestTypeHttp {
 			wantStatus = http.StatusOK
 		}
 
@@ -121,6 +124,8 @@ func (r *Runner) getClient(typ RequestType) (Executor, error) {
 		return r.httpExecutor, nil
 	case "":
 		return r.httpExecutor, nil
+	case RequestTypeGrpc:
+		return r.grpcExecutor, nil
 	default:
 		return nil, fmt.Errorf("unhandled client type of '%v'", typ)
 	}

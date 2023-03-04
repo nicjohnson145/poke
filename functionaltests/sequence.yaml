@@ -1,0 +1,26 @@
+calls:
+- name: fetch
+  type: grpc
+  service-host: localhost:50051
+  url: functionaltest.EchoService/Echo
+  body:
+    message: foo
+  exports:
+  - jq: '.message'
+    as: 'msg'
+- name: repush
+  type: grpc
+  service-host: localhost:50051
+  url: functionaltest.EchoService/Echo
+  body:
+    message: '{{ .msg }}'
+  asserts:
+  - jq: '.message'
+    expected: 'foo'
+- name: expectedErr
+  type: grpc
+  service-host: localhost:50051
+  url: functionaltest.EchoService/Err
+  body:
+    code: 5
+  want-status: 5

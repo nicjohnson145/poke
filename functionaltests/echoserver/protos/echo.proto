@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package functionaltest;
+
+option go_package = "github.com/nicjohnson145/poke/functionaltest/protobuf";
+
+import "google/protobuf/empty.proto";
+
+message EchoMsg {
+    string message = 1;
+}
+
+message ErrMsg {
+    int64 code = 1;
+}
+
+service EchoService {
+    rpc Echo(EchoMsg) returns (EchoMsg);
+    rpc Err(ErrMsg) returns (google.protobuf.Empty);
+}
