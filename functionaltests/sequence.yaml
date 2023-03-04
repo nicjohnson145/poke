@@ -17,3 +17,10 @@ calls:
   asserts:
   - jq: '.message'
     expected: 'foo'
+- name: expectedErr
+  type: grpc
+  service-host: localhost:50051
+  url: functionaltest.EchoService/Err
+  body:
+    code: 5
+  want-status: 5

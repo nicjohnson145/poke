@@ -136,12 +136,19 @@ func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error)
 		return nil, status.Convert(err).Code(), err
 	}
 
+	if handler.Status.Code() != codes.OK {
+		return nil, handler.Status.Code(), nil
+	}
+
 	g.log.Debug().Msg("decoding body")
 	var outBody map[string]any
-	err = json.Unmarshal(outBytes.Bytes(), &outBody)
+	err = json.NewDecoder(outBytes).Decode(&outBody)
 	if err != nil {
-		g.log.Err(err).Msg("error unmarshalling body")
-		return nil, 0, err
+		if err != io.EOF {
+			g.log.Err(err).Msg("error unmarshalling body")
+			return nil, 0, err
+		}
+		// No body, move along
 	}
 
 	return outBody, codes.OK, nil
