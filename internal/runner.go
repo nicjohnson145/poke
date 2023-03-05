@@ -100,6 +100,7 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 
 		if result.StatusCode != wantStatus {
 			r.log.Error().Interface("body", result.Body).Msg("body")
+			r.log.Err(result.Error).Msg("error msg")
 			return fmt.Errorf("got incorrect status: want (%v) got (%v)", wantStatus, result.StatusCode)
 		}
 

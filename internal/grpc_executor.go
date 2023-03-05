@@ -166,13 +166,10 @@ func (g *GRPCExecutor) makeRequestHeaderList(call Call) []string {
 
 func (g *GRPCExecutor) Execute(call Call) (*ExecuteResult, error) {
 	body, code, err := g.executeRPC(call)
-	if err != nil {
-		g.log.Err(err).Msg("error executing RPC")
-		return nil, err
-	}
 
 	return &ExecuteResult{
 		StatusCode: int(code),
 		Body: body,
+		Error: err,
 	}, nil
 }
