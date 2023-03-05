@@ -90,7 +90,7 @@ func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error)
 		return nil, 0, err
 	}
 
-	var input io.Reader
+	var input io.Reader = strings.NewReader("")
 	if call.Body != nil {
 		bodyBytes, err := json.Marshal(call.Body)
 		if err != nil {
@@ -139,7 +139,7 @@ func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error)
 	}
 
 	if handler.Status.Code() != codes.OK {
-		return nil, handler.Status.Code(), nil
+		return nil, handler.Status.Code(), handler.Status.Err()
 	}
 
 	g.log.Debug().Msg("decoding body")
