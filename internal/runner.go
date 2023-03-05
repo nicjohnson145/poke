@@ -73,6 +73,11 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 		}
 	}
 	for idx, c := range seq.Calls {
+		name := c.Name
+		if name == "" {
+			name = fmt.Sprintf("call_%v", idx)
+		}
+		r.log.Info().Str("call", name).Msg("executing call")
 		call, err := r.evaluateTemplate(c)
 		if err != nil {
 			return err
@@ -85,10 +90,6 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 
 		result, err := exec.Execute(call)
 		if err != nil {
-			name := call.Name
-			if name == "" {
-				name = fmt.Sprintf("call_%v", idx)
-			}
 			return fmt.Errorf("error executing call %v: %w", name, err)
 		}
 
