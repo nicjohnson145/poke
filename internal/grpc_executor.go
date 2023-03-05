@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 
@@ -130,7 +131,8 @@ func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error)
 		return nil, 0, err
 	}
 
-	err = grpcurl.InvokeRPC(ctx, descriptor, conn, call.Url, []string{}, handler, reqParser.Next)
+	headers := g.makeRequestHeaderList(call)
+	err = grpcurl.InvokeRPC(ctx, descriptor, conn, call.Url, headers, handler, reqParser.Next)
 	if err != nil {
 		g.log.Err(err).Msg("error invoking RPC")
 		return nil, status.Convert(err).Code(), err
@@ -152,6 +154,14 @@ func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error)
 	}
 
 	return outBody, codes.OK, nil
+}
+
+func (g *GRPCExecutor) makeRequestHeaderList(call Call) []string {
+	headers := []string{}
+	for key, val := range call.Headers {
+		headers = append(headers, fmt.Sprintf("%v: %v", key, val))
+	}
+	return headers
 }
 
 func (g *GRPCExecutor) Execute(call Call) (*ExecuteResult, error) {
