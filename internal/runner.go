@@ -2,8 +2,10 @@ package internal
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -20,6 +22,7 @@ type RunnerOpts struct {
 	HttpExecutor Executor
 	GrpcExecutor Executor
 	Parser       Parser
+	Output       io.Writer
 }
 
 func NewRunner(opts RunnerOpts) *Runner {
@@ -29,6 +32,7 @@ func NewRunner(opts RunnerOpts) *Runner {
 		grpcExecutor: opts.GrpcExecutor,
 		parser:       opts.Parser,
 		ctxVariables: make(map[string]any),
+		output:       opts.Output,
 	}
 }
 
@@ -38,6 +42,7 @@ type Runner struct {
 	grpcExecutor Executor
 	parser       Parser
 	ctxVariables map[string]any
+	output       io.Writer
 }
 
 func (r *Runner) Run(path string) error {
@@ -102,6 +107,15 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 			r.log.Error().Interface("body", result.Body).Msg("body")
 			r.log.Err(result.Error).Msg("error msg")
 			return fmt.Errorf("got incorrect status: want (%v) got (%v)", wantStatus, result.StatusCode)
+		}
+
+		if call.Print {
+			bodyBytes, err := json.MarshalIndent(result.Body, "", "   ")
+			if err != nil {
+				r.log.Err(err).Msg("error marshalling body for output")
+				return err
+			}
+			fmt.Fprint(r.output, string(bodyBytes))
 		}
 
 		for _, exp := range call.Exports {

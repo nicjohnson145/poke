@@ -21,6 +21,7 @@ type Call struct {
 	WantStatus  int               `yaml:"want-status,omitempty"`
 	Exports     []Export          `yaml:"exports,omitempty"`
 	Asserts     []Assert          `yaml:"asserts,omitempty"`
+	Print       bool              `yaml:"print,omitempty"`
 }
 
 func (c *Call) GetType() RequestType {

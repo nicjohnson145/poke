@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/nicjohnson145/poke/config"
@@ -11,7 +12,7 @@ import (
 
 func Root() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "poke",
+		Use:  "poke",
 		Args: cobra.ExactArgs(1),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// So we don't print usage messages on execution errors
@@ -36,6 +37,7 @@ func Root() *cobra.Command {
 				Parser: internal.NewFSParser(internal.FSParserOpts{
 					Logger: config.WithComponent(logger, "fsparser"),
 				}),
+				Output: os.Stdout,
 			})
 			return runner.Run(args[0])
 		},
