@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -73,8 +74,10 @@ func (f *FSParser) ParseSingleSequence(path string) (Sequence, error) {
 	if err != nil {
 		return Sequence{}, fmt.Errorf("error reading file: %w", err)
 	}
+	decoder := yaml.NewDecoder(bytes.NewBuffer(content))
+	decoder.KnownFields(true)
 	var seq Sequence
-	err = yaml.Unmarshal(content, &seq)
+	err = decoder.Decode(&seq)
 	if err != nil {
 		return Sequence{}, fmt.Errorf("error unmarshalling: %w", err)
 	}

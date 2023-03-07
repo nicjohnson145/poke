@@ -1,0 +1,5 @@
+calls:
+- url: https://foo.bar.com/foo_seq_top
+  assertions:
+  - jq: '.foo'
+    expected: 'bar'

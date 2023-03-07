@@ -22,4 +22,12 @@ func TestFSParser(t *testing.T) {
 			got,
 		)
 	})
+
+	t.Run("unknown key errors", func(t *testing.T) {
+		parser := NewFSParser(FSParserOpts{})
+
+		_, err := parser.Parse("./testdata/parser/unknown_key.yaml")
+		require.Error(t, err)
+		require.ErrorContains(t, err, "field assertions not found")
+	})
 }
