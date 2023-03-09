@@ -16,8 +16,14 @@ func TestFSParser(t *testing.T) {
 		require.Equal(
 			t,
 			SequenceMap{
-				"foo_seq.yaml": {Calls: []Call{{Url: "https://foo.bar.com/foo_seq_top"}}},
-				"subdir/foo_seq.yml": {Calls: []Call{{Url: "https://foo.bar.com/foo_seq_inner"}}},
+				"foo_seq.yaml": {
+					Calls: []Call{{Url: "https://foo.bar.com/foo_seq_top"}},
+					path: "testdata/parser/happy",
+				},
+				"subdir/foo_seq.yml": {
+					Calls: []Call{{Url: "https://foo.bar.com/foo_seq_inner"}},
+					path: "testdata/parser/happy/subdir",
+				},
 			},
 			got,
 		)

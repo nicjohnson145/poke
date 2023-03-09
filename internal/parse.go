@@ -82,6 +82,8 @@ func (f *FSParser) ParseSingleSequence(path string) (Sequence, error) {
 		return Sequence{}, fmt.Errorf("error unmarshalling: %w", err)
 	}
 
+	seq.path = filepath.Dir(path)
+
 	return seq, nil
 }
 

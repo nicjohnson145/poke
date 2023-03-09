@@ -34,6 +34,7 @@ func (c *Call) GetType() RequestType {
 type Sequence struct {
 	Vars  map[string]any `yaml:"vars"`
 	Calls []Call         `yaml:"calls"`
+	path  string         `yaml:"-"`
 }
 
 type Export struct {

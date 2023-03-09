@@ -3,11 +3,13 @@ package internal
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"text/template"
 
@@ -83,7 +85,7 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 			name = fmt.Sprintf("call_%v", idx)
 		}
 		r.log.Info().Str("call", name).Msg("executing call")
-		call, err := r.evaluateTemplate(c)
+		call, err := r.evaluateTemplate(c, seq.path)
 		if err != nil {
 			return err
 		}
@@ -164,16 +166,40 @@ var tmplFuncs = template.FuncMap{
 		}
 		return val, nil
 	},
+	"b64readfile": func(path string) (string, error) {
+		return "", nil
+	},
 }
 
-func (r *Runner) evaluateTemplate(call Call) (Call, error) {
+func (r *Runner) genFuncs(seqPath string) template.FuncMap {
+	return template.FuncMap{
+		"env": func(key string) (string, error) {
+			val, ok := os.LookupEnv(key)
+			if !ok {
+				return "", fmt.Errorf("env var %v not set", key)
+			}
+			return val, nil
+		},
+		"readfileb64": func(path string) (string, error) {
+			fileBytes, err := os.ReadFile(filepath.Join(seqPath, path))
+			if err != nil {
+				return "", fmt.Errorf("error reading %v: %w", path, err)
+			}
+			return base64.StdEncoding.EncodeToString(fileBytes), nil
+		},
+	}
+}
+
+func (r *Runner) evaluateTemplate(call Call, seqPath string) (Call, error) {
 	callBytes, err := yaml.Marshal(call)
 	if err != nil {
 		r.log.Err(err).Msg("error marshalling call")
 		return Call{}, err
 	}
 
-	t, err := template.New("").Funcs(tmplFuncs).Parse(string(callBytes))
+	funcs := r.genFuncs(seqPath)
+
+	t, err := template.New("").Funcs(funcs).Parse(string(callBytes))
 	if err != nil {
 		r.log.Err(err).Msg("error parsing call as template")
 		return Call{}, err
