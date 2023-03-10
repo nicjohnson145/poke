@@ -181,7 +181,13 @@ func (r *Runner) genFuncs(seqPath string) template.FuncMap {
 			return val, nil
 		},
 		"readfileb64": func(path string) (string, error) {
-			fileBytes, err := os.ReadFile(filepath.Join(seqPath, path))
+			var final string
+			if filepath.IsAbs(path) {
+				final = path
+			} else {
+				final = filepath.Join(seqPath, path)
+			}
+			fileBytes, err := os.ReadFile(final)
 			if err != nil {
 				return "", fmt.Errorf("error reading %v: %w", path, err)
 			}
