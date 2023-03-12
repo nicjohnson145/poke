@@ -47,7 +47,11 @@ func (h *HTTPExecutor) Execute(call Call) (*ExecuteResult, error) {
 
 	method := call.Method
 	if method == "" {
-		method = http.MethodGet
+		if call.Body != nil {
+			method = http.MethodPost
+		} else {
+			method = http.MethodGet
+		}
 	}
 	h.log.Debug().Str("method", method).Str("url", call.Url).Msg("executing call")
 	req, err := http.NewRequest(method, call.Url, inBody)
