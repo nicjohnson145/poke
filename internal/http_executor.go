@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -64,6 +65,12 @@ func (h *HTTPExecutor) Execute(call Call) (*ExecuteResult, error) {
 			req.Header.Set(k, v)
 		}
 	}
+
+	transport := &http.Transport{}
+	if call.SkipVerify {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+	h.client.Transport = transport
 
 	resp, err := h.client.Do(req)
 	if err != nil {

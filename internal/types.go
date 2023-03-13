@@ -22,6 +22,7 @@ type Call struct {
 	Exports     []Export          `yaml:"exports,omitempty"`
 	Asserts     []Assert          `yaml:"asserts,omitempty"`
 	Print       bool              `yaml:"print,omitempty"`
+	SkipVerify  bool              `yaml:"skip-verify,omitempty"`
 }
 
 func (c *Call) GetType() RequestType {
