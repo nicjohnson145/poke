@@ -158,20 +158,20 @@ func (r *Runner) getClient(typ RequestType) (Executor, error) {
 	}
 }
 
-var tmplFuncs = template.FuncMap{
-	"env": func(key string) (string, error) {
-		val, ok := os.LookupEnv(key)
-		if !ok {
-			return "", fmt.Errorf("env var %v not set", key)
-		}
-		return val, nil
-	},
-	"b64readfile": func(path string) (string, error) {
-		return "", nil
-	},
-}
-
 func (r *Runner) genFuncs(seqPath string) template.FuncMap {
+	readFile := func(path string) ([]byte, error) {
+			var final string
+			if filepath.IsAbs(path) {
+				final = path
+			} else {
+				final = filepath.Join(seqPath, path)
+			}
+			fileBytes, err := os.ReadFile(final)
+			if err != nil {
+				return nil, fmt.Errorf("error reading %v: %w", path, err)
+			}
+			return fileBytes, nil
+	}
 	return template.FuncMap{
 		"env": func(key string) (string, error) {
 			val, ok := os.LookupEnv(key)
@@ -181,17 +181,18 @@ func (r *Runner) genFuncs(seqPath string) template.FuncMap {
 			return val, nil
 		},
 		"readfileb64": func(path string) (string, error) {
-			var final string
-			if filepath.IsAbs(path) {
-				final = path
-			} else {
-				final = filepath.Join(seqPath, path)
-			}
-			fileBytes, err := os.ReadFile(final)
+			fBytes, err := readFile(path)
 			if err != nil {
-				return "", fmt.Errorf("error reading %v: %w", path, err)
+				return "", err
 			}
-			return base64.StdEncoding.EncodeToString(fileBytes), nil
+			return base64.StdEncoding.EncodeToString(fBytes), nil
+		},
+		"readfile": func(path string) (string, error) {
+			fBytes, err := readFile(path)
+			if err != nil {
+				return "", err
+			}
+			return string(fBytes), nil
 		},
 	}
 }
