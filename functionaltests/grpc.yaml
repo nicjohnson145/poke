@@ -3,16 +3,13 @@ vars:
   service: functionaltest.EchoService
   msg_body: "env MSG_BODY"
 
+imports:
+  external_file: "external_file.yaml"
+
 calls:
-- name: fetch
-  type: grpc
-  service-host: '{{ .service_host }}'
-  url: '{{ .service }}/Echo'
-  body:
-    message: foo
-  exports:
-  - jq: '.message'
-    as: 'msg'
+- from-import:
+    name: external_file
+    call: fetch
 - name: repush
   type: grpc
   service-host: '{{ .service_host }}'

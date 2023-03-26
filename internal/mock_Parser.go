@@ -71,6 +71,58 @@ func (_c *MockParser_Parse_Call) RunAndReturn(run func(string) (SequenceMap, err
 	return _c
 }
 
+// ParseSingleSequence provides a mock function with given fields: path
+func (_m *MockParser) ParseSingleSequence(path string) (Sequence, error) {
+	ret := _m.Called(path)
+
+	var r0 Sequence
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (Sequence, error)); ok {
+		return rf(path)
+	}
+	if rf, ok := ret.Get(0).(func(string) Sequence); ok {
+		r0 = rf(path)
+	} else {
+		r0 = ret.Get(0).(Sequence)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(path)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockParser_ParseSingleSequence_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ParseSingleSequence'
+type MockParser_ParseSingleSequence_Call struct {
+	*mock.Call
+}
+
+// ParseSingleSequence is a helper method to define mock.On call
+//   - path string
+func (_e *MockParser_Expecter) ParseSingleSequence(path interface{}) *MockParser_ParseSingleSequence_Call {
+	return &MockParser_ParseSingleSequence_Call{Call: _e.mock.On("ParseSingleSequence", path)}
+}
+
+func (_c *MockParser_ParseSingleSequence_Call) Run(run func(path string)) *MockParser_ParseSingleSequence_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockParser_ParseSingleSequence_Call) Return(_a0 Sequence, _a1 error) *MockParser_ParseSingleSequence_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockParser_ParseSingleSequence_Call) RunAndReturn(run func(string) (Sequence, error)) *MockParser_ParseSingleSequence_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 type mockConstructorTestingTNewMockParser interface {
 	mock.TestingT
 	Cleanup(func())

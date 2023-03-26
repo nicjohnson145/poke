@@ -23,6 +23,7 @@ type Call struct {
 	Asserts     []Assert          `yaml:"asserts,omitempty"`
 	Print       bool              `yaml:"print,omitempty"`
 	SkipVerify  bool              `yaml:"skip-verify,omitempty"`
+	FromImport  *ImportedCall     `yaml:"from-import,omitempty"`
 }
 
 func (c *Call) GetType() RequestType {
@@ -33,9 +34,11 @@ func (c *Call) GetType() RequestType {
 }
 
 type Sequence struct {
-	Vars  map[string]any `yaml:"vars"`
-	Calls []Call         `yaml:"calls"`
-	path  string         `yaml:"-"`
+	Vars          map[string]any             `yaml:"vars"`
+	Imports       map[string]string          `yaml:"imports"`
+	Calls         []Call                     `yaml:"calls"`
+	path          string                     `yaml:"-"`
+	importedCalls map[string]map[string]Call `yaml:"-"`
 }
 
 type Export struct {
@@ -46,4 +49,9 @@ type Export struct {
 type Assert struct {
 	JQ       string `yaml:"jq,omitempty"`
 	Expected any    `yaml:"expected,omitempty"`
+}
+
+type ImportedCall struct {
+	Name string `yaml:"name"`
+	Call string `yaml:"call"`
 }

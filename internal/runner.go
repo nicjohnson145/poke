@@ -79,13 +79,29 @@ func (r *Runner) runSingleSequence(seq Sequence) error {
 			r.ctxVariables[k] = v
 		}
 	}
+	if err := r.resolveImports(&seq); err != nil {
+		return fmt.Errorf("error resolving imports: %w", err)
+	}
+
 	for idx, c := range seq.Calls {
-		name := c.Name
+		call := c
+		if c.FromImport != nil {
+			impSeq, ok := seq.importedCalls[c.FromImport.Name]
+			if !ok {
+				return fmt.Errorf("unable to find import %v", c.FromImport.Name)
+			}
+			impCall, ok := impSeq[c.FromImport.Call]
+			if !ok {
+				return fmt.Errorf("unable to find call %v in imported sequence %v", c.FromImport.Call, c.FromImport.Name)
+			}
+			call = impCall
+		}
+		name := call.Name
 		if name == "" {
 			name = fmt.Sprintf("call_%v", idx)
 		}
 		r.log.Info().Str("call", name).Msg("executing call")
-		call, err := r.evaluateTemplate(c, seq.path)
+		call, err := r.evaluateTemplate(call, seq.path)
 		if err != nil {
 			return err
 		}
@@ -158,20 +174,23 @@ func (r *Runner) getClient(typ RequestType) (Executor, error) {
 	}
 }
 
-func (r *Runner) genFuncs(seqPath string) template.FuncMap {
-	readFile := func(path string) ([]byte, error) {
-			var final string
-			if filepath.IsAbs(path) {
-				final = path
-			} else {
-				final = filepath.Join(seqPath, path)
-			}
-			fileBytes, err := os.ReadFile(final)
-			if err != nil {
-				return nil, fmt.Errorf("error reading %v: %w", path, err)
-			}
-			return fileBytes, nil
+func (r *Runner) resolvePath(seqPath string, path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	} else {
+		return filepath.Join(seqPath, path)
 	}
+}
+
+func (r *Runner) readFile(seqPath string, path string) ([]byte, error) {
+	fileBytes, err := os.ReadFile(r.resolvePath(seqPath, path))
+	if err != nil {
+		return nil, fmt.Errorf("error reading %v: %w", path, err)
+	}
+	return fileBytes, nil
+}
+
+func (r *Runner) genFuncs(seqPath string) template.FuncMap {
 	return template.FuncMap{
 		"env": func(key string) (string, error) {
 			val, ok := os.LookupEnv(key)
@@ -181,20 +200,41 @@ func (r *Runner) genFuncs(seqPath string) template.FuncMap {
 			return val, nil
 		},
 		"readfileb64": func(path string) (string, error) {
-			fBytes, err := readFile(path)
+			fBytes, err := r.readFile(seqPath, path)
 			if err != nil {
 				return "", err
 			}
 			return base64.StdEncoding.EncodeToString(fBytes), nil
 		},
 		"readfile": func(path string) (string, error) {
-			fBytes, err := readFile(path)
+			fBytes, err := r.readFile(seqPath, path)
 			if err != nil {
 				return "", err
 			}
 			return string(fBytes), nil
 		},
 	}
+}
+
+func (r *Runner) resolveImports(seq *Sequence) error {
+	r.log.Debug().Msg("resolving imports")
+	for name, path := range seq.Imports {
+		r.log.Debug().Str("import", name).Msg("parsing imported sequence")
+		impSeq, err := r.parser.ParseSingleSequence(r.resolvePath(seq.path, path))
+		if err != nil {
+			return fmt.Errorf("error parsing imported sequence '%v': %w", path, err)
+		}
+
+		if impSeq.Imports != nil {
+			return fmt.Errorf("import %v contains imports. Only one level of nesting supported", name)
+		}
+
+		seq.importedCalls[name] = make(map[string]Call)
+		for _, call := range impSeq.Calls {
+			seq.importedCalls[name][call.Name] = call
+		}
+	}
+	return nil
 }
 
 func (r *Runner) evaluateTemplate(call Call, seqPath string) (Call, error) {

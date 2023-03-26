@@ -19,10 +19,12 @@ func TestFSParser(t *testing.T) {
 				"foo_seq.yaml": {
 					Calls: []Call{{Url: "https://foo.bar.com/foo_seq_top"}},
 					path: "testdata/parser/happy",
+					importedCalls: map[string]map[string]Call{},
 				},
 				"subdir/foo_seq.yml": {
 					Calls: []Call{{Url: "https://foo.bar.com/foo_seq_inner"}},
 					path: "testdata/parser/happy/subdir",
+					importedCalls: map[string]map[string]Call{},
 				},
 			},
 			got,

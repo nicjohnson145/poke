@@ -19,6 +19,7 @@ type SequenceMap map[string]Sequence
 
 type Parser interface {
 	Parse(path string) (SequenceMap, error)
+	ParseSingleSequence(path string) (Sequence, error)
 }
 
 type FSParserOpts struct {
@@ -81,6 +82,8 @@ func (f *FSParser) ParseSingleSequence(path string) (Sequence, error) {
 	if err != nil {
 		return Sequence{}, fmt.Errorf("error unmarshalling: %w", err)
 	}
+
+	seq.importedCalls = make(map[string]map[string]Call)
 
 	seq.path = filepath.Dir(path)
 
