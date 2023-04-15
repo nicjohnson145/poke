@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"net/http"
 	"os"
 	"time"
 
@@ -23,13 +22,16 @@ func Root() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logger := config.InitLogger()
+			client := internal.NewHttpClient(internal.HttpClientConfig{
+				Logger: config.WithComponent(logger, "httpclient"),
+			})
+			client.SetTimeout(10 * time.Second)
+
 			runner := internal.NewRunner(internal.RunnerOpts{
 				Logger: config.WithComponent(logger, "runner"),
 				HttpExecutor: internal.NewHTTPExecutor(internal.HTTPExecutorOpts{
 					Logger: config.WithComponent(logger, "httpexecutor"),
-					Client: &http.Client{
-						Timeout: 10 * time.Second,
-					},
+					Client: client,
 				}),
 				GrpcExecutor: internal.NewGRPCExecutor(internal.GRPCExecutorOpts{
 					Logger: config.WithComponent(logger, "grpcexecutor"),

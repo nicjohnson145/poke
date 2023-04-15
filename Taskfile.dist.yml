@@ -11,7 +11,7 @@ tasks:
     internal: true
     dir: internal
     cmds:
-    - mockery --all --inpackage --disable-version-string --with-expecter
+    - mockery
 
   smokes:
     desc: run smoke tests against dummyjson.com

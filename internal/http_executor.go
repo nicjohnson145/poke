@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,18 +12,13 @@ import (
 
 type HTTPExecutorOpts struct {
 	Logger zerolog.Logger
-	Client *http.Client
+	Client IHttpClient
 }
 
 func NewHTTPExecutor(opts HTTPExecutorOpts) *HTTPExecutor {
-	client := http.DefaultClient
-	if opts.Client != nil {
-		client = opts.Client
-	}
-
 	return &HTTPExecutor{
-		log: opts.Logger,
-		client: client,
+		log:    opts.Logger,
+		client: opts.Client,
 	}
 }
 
@@ -32,7 +26,7 @@ var _ Executor = (*HTTPExecutor)(nil)
 
 type HTTPExecutor struct {
 	log    zerolog.Logger
-	client *http.Client
+	client IHttpClient
 }
 
 func (h *HTTPExecutor) Execute(call Call) (*ExecuteResult, error) {
@@ -66,11 +60,9 @@ func (h *HTTPExecutor) Execute(call Call) (*ExecuteResult, error) {
 		}
 	}
 
-	transport := &http.Transport{}
 	if call.SkipVerify {
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		h.client.SetNoTLSVerify()
 	}
-	h.client.Transport = transport
 
 	resp, err := h.client.Do(req)
 	if err != nil {
@@ -88,7 +80,7 @@ func (h *HTTPExecutor) Execute(call Call) (*ExecuteResult, error) {
 	}
 
 	return &ExecuteResult{
-		Body: outBody,
+		Body:       outBody,
 		StatusCode: resp.StatusCode,
 	}, nil
 }

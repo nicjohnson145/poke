@@ -1,0 +1,12 @@
+with-expecter: True
+filename: "mock_{{.InterfaceName}}.go"
+dir: "{{.InterfaceDir}}"
+structname: "Mock{{.InterfaceName}}"
+outpkg: "{{.PackageName}}"
+inpackage: True
+packages:
+  github.com/nicjohnson145/poke/internal:
+    interfaces:
+      Executor:
+      Parser:
+      IHttpClient:
