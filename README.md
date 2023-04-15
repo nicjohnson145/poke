@@ -77,3 +77,14 @@ calls:
 | --- | ----------- | -------- |
 | name | the name of this call, makes logging nice | No |
 | call | the name of the call to execute in the imported sequence | Yes |
+
+
+### Available Template Functions
+
+The following functions are exposed for use in in the `text/template` expansions in calls
+
+| Function | Description | Example |
+| -------- | ----------- | ------- |
+| env | read the given env variable | `{{ env "FOO_ENV" }}` |
+| readfile | read the given file returning its contents (supports relative or absolute paths) | `{{ readfile "foo.yaml" }}`
+| readfileb64 | same as `readfile` but returns the contents base64 encoded | `{{ readfileb64 "/root/some-file.txt" }}`
