@@ -25,6 +25,7 @@ type RunnerOpts struct {
 	GrpcExecutor Executor
 	Parser       Parser
 	Output       io.Writer
+	FailFast     bool
 }
 
 func NewRunner(opts RunnerOpts) *Runner {
@@ -35,6 +36,7 @@ func NewRunner(opts RunnerOpts) *Runner {
 		parser:       opts.Parser,
 		ctxVariables: make(map[string]any),
 		output:       opts.Output,
+		failFast:     opts.FailFast,
 	}
 }
 
@@ -45,6 +47,7 @@ type Runner struct {
 	parser       Parser
 	ctxVariables map[string]any
 	output       io.Writer
+	failFast     bool
 }
 
 func (r *Runner) Run(path string) error {
@@ -64,6 +67,9 @@ func (r *Runner) runSequences(seqs map[string]Sequence) error {
 		if err := r.runSingleSequence(seq); err != nil {
 			r.log.Err(err).Msg("encountered error during execution")
 			errs = append(errs, fmt.Errorf("error during sequence %v: %w", name, err))
+			if r.failFast {
+				break
+			}
 		}
 		// Reset variables at the end of a sequence so we don't bleed over
 		r.ctxVariables = map[string]any{}

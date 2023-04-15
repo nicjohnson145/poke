@@ -45,6 +45,7 @@ func Root() *cobra.Command {
 		},
 	}
 	rootCmd.PersistentFlags().BoolP(config.Debug, "d", false, "Enable debug logging")
+	rootCmd.Flags().BoolP(config.FailFast, "f", false, "Stop execution on first sequence failure")
 
 	rootCmd.AddCommand(
 		versionCmd(),

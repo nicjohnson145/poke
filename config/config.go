@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	Debug             = "debug"
+	Debug    = "debug"
+	FailFast = "fail-fast"
 )
 
 func InitializeConfig(cmd *cobra.Command) error {
