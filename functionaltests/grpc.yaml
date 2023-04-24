@@ -13,6 +13,7 @@ calls:
 - name: repush
   type: grpc
   service-host: '{{ .service_host }}'
+  skip-verify: true
   url: '{{ .service }}/Echo'
   body:
     message: '{{ .msg }}'
@@ -21,6 +22,7 @@ calls:
     expected: 'foo'
 - name: expectedErr
   type: grpc
+  skip-verify: true
   service-host: '{{ .service_host }}'
   url: '{{ .service }}/Err'
   body:

@@ -16,6 +16,10 @@ import (
 	"google.golang.org/grpc/metadata"
 	reflectpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
+	"crypto/tls"
+	"crypto/x509"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type GRPCExecutorOpts struct {
@@ -38,14 +42,14 @@ type GRPCExecutor struct {
 	connections map[string]*grpc.ClientConn
 }
 
-func (g *GRPCExecutor) fetchDescriptors(service string, host string) (grpcurl.DescriptorSource, error) {
+func (g *GRPCExecutor) fetchDescriptors(service string, host string, dialInsecure bool) (grpcurl.DescriptorSource, error) {
 	ds, ok := g.descriptors[service]
 	if ok {
 		g.log.Debug().Str("service", service).Msg("descriptor already fetched, using cache")
 		return ds, nil
 	}
 
-	conn, err := g.connection(host)
+	conn, err := g.connection(host, dialInsecure)
 	if err != nil {
 		return nil, err
 	}
@@ -62,17 +66,27 @@ func (g *GRPCExecutor) callToServiceName(call Call) string {
 	return strings.Split(call.Url, "/")[0]
 }
 
-func (g *GRPCExecutor) connection(host string) (*grpc.ClientConn, error) {
+func (g *GRPCExecutor) connection(host string, dialInsecure bool) (*grpc.ClientConn, error) {
 	conn, ok := g.connections[host]
 	if ok {
 		g.log.Debug().Str("host", host).Msg("reusing existing connection")
 		return conn, nil
 	}
 
+	certPool, err := x509.SystemCertPool()
+	if err != nil {
+		g.log.Err(err).Msg("error getting SSL pool")
+		return nil, err
+	}
+	creds := credentials.NewTLS(&tls.Config{RootCAs: certPool})
+	if dialInsecure {
+		creds = insecure.NewCredentials()
+	}
+
 	g.log.Debug().Str("host", host).Msg("acquiring connection")
 	// TODO: header support
 	ctx := metadata.NewOutgoingContext(context.Background(), grpcurl.MetadataFromHeaders([]string{}))
-	conn, err := grpcurl.BlockingDial(ctx, "tcp", host, nil)
+	conn, err = grpcurl.BlockingDial(ctx, "tcp", host, creds)
 	if err != nil {
 		g.log.Err(err).Msg("error dialing service")
 		return nil, err
@@ -84,7 +98,7 @@ func (g *GRPCExecutor) connection(host string) (*grpc.ClientConn, error) {
 
 func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error) {
 	g.log.Debug().Msg("fetching descriptors")
-	descriptor, err := g.fetchDescriptors(g.callToServiceName(call), call.ServiceHost)
+	descriptor, err := g.fetchDescriptors(g.callToServiceName(call), call.ServiceHost, call.SkipVerify)
 	if err != nil {
 		g.log.Err(err).Msg("error fetching descriptor")
 		return nil, 0, err
@@ -125,7 +139,7 @@ func (g *GRPCExecutor) executeRPC(call Call) (map[string]any, codes.Code, error)
 	}
 
 	ctx := context.Background()
-	conn, err := g.connection(call.ServiceHost)
+	conn, err := g.connection(call.ServiceHost, call.SkipVerify)
 	if err != nil {
 		g.log.Err(err).Msg("error dialing service")
 		return nil, 0, err
